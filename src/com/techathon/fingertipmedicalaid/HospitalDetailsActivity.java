@@ -58,7 +58,7 @@ public class HospitalDetailsActivity extends Activity {
 				textView1.setText(getValue("name", nodeElement));
 				textView2.setText(getValue("address", nodeElement));
 				textView3.setText(getValue("phone", nodeElement));
-				textView4.setText("Departments: " + getValue("department", nodeElement));
+				textView4.setText(getValue("department", nodeElement));
 			}
 		}
 	}

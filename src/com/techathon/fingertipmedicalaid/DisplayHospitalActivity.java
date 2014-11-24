@@ -18,6 +18,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Criteria;
@@ -38,6 +39,7 @@ public class DisplayHospitalActivity extends Activity implements LocationListene
 
 	String[] nodeXMLValue;
 	LocationManager locationManager;
+	ProgressDialog progressDialog;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -178,6 +180,11 @@ public class DisplayHospitalActivity extends Activity implements LocationListene
 		}
 		
 		@Override
+		protected void onPreExecute() {
+			progressDialog = ProgressDialog.show(DisplayHospitalActivity.this,"","Loading",false);
+		}
+		
+		@Override
 	    protected void onPostExecute(String fetchedXML) {
 			//XML Parsing
 			Document document = null;
@@ -243,7 +250,8 @@ public class DisplayHospitalActivity extends Activity implements LocationListene
 	        		startActivity(intent);
 	        	} 
 			});
-
+	        
+	        progressDialog.dismiss();
 	    }
 	}
 }

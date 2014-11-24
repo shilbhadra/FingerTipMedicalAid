@@ -58,7 +58,7 @@ public class DoctorDetailsActivity extends Activity {
 				textView1.setText(getValue("name", nodeElement));
 				textView2.setText(getValue("address", nodeElement));
 				textView3.setText(getValue("phone", nodeElement));
-				textView4.setText("Availability: " + getValue("availability", nodeElement));
+				textView4.setText(getValue("availability", nodeElement));
 			}
 		}
 	}
