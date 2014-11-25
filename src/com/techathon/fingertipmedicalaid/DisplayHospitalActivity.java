@@ -18,13 +18,17 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
@@ -40,6 +44,8 @@ public class DisplayHospitalActivity extends Activity implements LocationListene
 	String[] nodeXMLValue;
 	LocationManager locationManager;
 	ProgressDialog progressDialog;
+	String strLatitude;
+    String strLongitude;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -66,11 +72,36 @@ public class DisplayHospitalActivity extends Activity implements LocationListene
 	    	longitude = (double)88.4108479;
 	    }
 	    
-	    String url = "http://fingertipserver.mybluemix.net/FingerTipMedicalAidServlet?medical=hospital&lattitude=" + latitude + "&longitude=" + longitude;
-	    //String url = "http://fingertipserver.mybluemix.net/FingerTipMedicalAidServlet?medical=hospital&lattitude=22.5115645&longitude=88.4108479";
+	    strLatitude = Double.toString(latitude);
+	    strLongitude = Double.toString(longitude);
 	    
-	    GetXMLTask task = new GetXMLTask();
-	    task.execute(new String[] {url});
+	    
+	    ConnectivityManager cm = (ConnectivityManager)getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+ 
+	    NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+	    boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+	    
+	    if(!isConnected) {
+	    	AlertDialog alertDialog = new AlertDialog.Builder(DisplayHospitalActivity.this).create();
+	    	alertDialog.setTitle("Internet");
+	    	alertDialog.setMessage("Please check your Internet connection.");
+	    	alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+	    	    new DialogInterface.OnClickListener() {
+	    	        public void onClick(DialogInterface dialog, int which) {
+	    	            dialog.dismiss();
+	    	            finish();
+	    	        }
+	    	    });
+	    	
+	    	alertDialog.show();
+	    }
+	    
+	    String url = "http://fingertipserver.mybluemix.net/FingerTipMedicalAidServlet?medical=hospital&lattitude=" + latitude + "&longitude=" + longitude;
+	    
+	    if(isConnected) {
+	    	GetXMLTask task = new GetXMLTask();
+	    	task.execute(new String[] {url});
+	    }
 	}
 
 	@Override
@@ -186,71 +217,91 @@ public class DisplayHospitalActivity extends Activity implements LocationListene
 		
 		@Override
 	    protected void onPostExecute(String fetchedXML) {
-			//XML Parsing
-			Document document = null;
-			try {
-				DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-				InputSource inputSource = new InputSource();
-				inputSource.setCharacterStream(new StringReader(fetchedXML));
-				document = documentBuilder.parse(inputSource);
-			}
-			catch(Exception e) {
-				System.out.println(e.getMessage());
-			}
 			
-			Element element = document.getDocumentElement();
-			element.normalize();
-			
-			NodeList nodeList = document.getElementsByTagName("hospital");
-			
-			String[] values = new String[nodeList.getLength()];
-			nodeXMLValue = new String[nodeList.getLength()];
-			
-			for(int i = 0; i < nodeList.getLength(); i++) {
-				Node node = nodeList.item(i);
-				if(node.getNodeType() == Node.ELEMENT_NODE){
-					Element nodeElement = (Element)node;
-					
-					String listValue = getValue("name", nodeElement);
-					listValue += " (" + getValue("distance", nodeElement) + " km)";
-					values[i] = listValue;
-					
-					String listArrayValue = "<hospital>";
-					listArrayValue += "<id>" + getValue("id", nodeElement) + "</id>";
-					listArrayValue += "<name>" + getValue("name", nodeElement) + "</name>";
-					listArrayValue += "<distance>" + getValue("distance", nodeElement) + "</distance>";
-					listArrayValue += "<phone>" + getValue("phone", nodeElement) + "</phone>";
-					listArrayValue += "<address>" + getValue("address", nodeElement) + "</address>";
-					listArrayValue += "<department>" + getValue("department", nodeElement) + "</department>";
-					listArrayValue += "</hospital>";
-					nodeXMLValue[i] = listArrayValue;
+			if(fetchedXML == null) {
+		    	AlertDialog alertDialog = new AlertDialog.Builder(DisplayHospitalActivity.this).create();
+		    	alertDialog.setTitle("Internet");
+		    	alertDialog.setMessage("Please check your internet connection.");
+		    	alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+		    	    new DialogInterface.OnClickListener() {
+		    	        public void onClick(DialogInterface dialog, int which) {
+		    	            dialog.dismiss();
+		    	            DisplayHospitalActivity.this.finish();
+		    	        }
+		    	    });
+		    	
+		    	alertDialog.show();
+		    }
+			else {
+				//XML Parsing
+				Document document = null;
+				try {
+					DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+					InputSource inputSource = new InputSource();
+					inputSource.setCharacterStream(new StringReader(fetchedXML));
+					document = documentBuilder.parse(inputSource);
 				}
+				catch(Exception e) {
+					System.out.println(e.getMessage());
+				}
+				
+				Element element = document.getDocumentElement();
+				element.normalize();
+				
+				NodeList nodeList = document.getElementsByTagName("hospital");
+				
+				String[] values = new String[nodeList.getLength()];
+				nodeXMLValue = new String[nodeList.getLength()];
+				
+				for(int i = 0; i < nodeList.getLength(); i++) {
+					Node node = nodeList.item(i);
+					if(node.getNodeType() == Node.ELEMENT_NODE){
+						Element nodeElement = (Element)node;
+						
+						String listValue = getValue("name", nodeElement);
+						listValue += " (" + getValue("distance", nodeElement) + " km)";
+						values[i] = listValue;
+						
+						String listArrayValue = "<hospital>";
+						listArrayValue += "<id>" + getValue("id", nodeElement) + "</id>";
+						listArrayValue += "<name>" + getValue("name", nodeElement) + "</name>";
+						listArrayValue += "<distance>" + getValue("distance", nodeElement) + "</distance>";
+						listArrayValue += "<phone>" + getValue("phone", nodeElement) + "</phone>";
+						listArrayValue += "<address>" + getValue("address", nodeElement) + "</address>";
+						listArrayValue += "<department>" + getValue("department", nodeElement) + "</department>";
+						listArrayValue += "<tolongitude>" + getValue("longitude", nodeElement) + "</tolongitude>";
+						listArrayValue += "<tolatitude>" + getValue("latitude", nodeElement) + "</tolatitude>";
+						listArrayValue += "<fromlongitude>" + strLongitude + "</fromlongitude>";
+						listArrayValue += "<fromlatitude>" + strLatitude + "</fromlatitude>";
+						listArrayValue += "</hospital>";
+						nodeXMLValue[i] = listArrayValue;
+					}
+				}
+				
+				// Get ListView object from xml
+		        ListView listView = (ListView) findViewById(R.id.listView1);
+		        
+		        // Define a new Adapter
+		        // First parameter - Context
+		        // Second parameter - Layout for the row
+		        // Third parameter - ID of the TextView to which the data is written
+		        // Forth - the Array of data
+	
+		        ArrayAdapter<String> adapter = new ArrayAdapter<String>(DisplayHospitalActivity.this,
+		          android.R.layout.simple_list_item_1, android.R.id.text1, values);
+		        
+		        // Assign adapter to ListView
+		        listView.setAdapter(adapter);
+		        
+		        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+		        	@Override
+		        	public void onItemClick(AdapterView<?> adapter, View view, int position, long arg) {
+		        		Intent intent = new Intent(DisplayHospitalActivity.this, HospitalDetailsActivity.class);
+		        		intent.putExtra("ListItemXML", DisplayHospitalActivity.this.nodeXMLValue[position]);
+		        		startActivity(intent);
+		        	} 
+				});
 			}
-			
-			// Get ListView object from xml
-	        ListView listView = (ListView) findViewById(R.id.listView1);
-	        
-	        // Define a new Adapter
-	        // First parameter - Context
-	        // Second parameter - Layout for the row
-	        // Third parameter - ID of the TextView to which the data is written
-	        // Forth - the Array of data
-
-	        ArrayAdapter<String> adapter = new ArrayAdapter<String>(DisplayHospitalActivity.this,
-	          android.R.layout.simple_list_item_1, android.R.id.text1, values);
-	        
-	        // Assign adapter to ListView
-	        listView.setAdapter(adapter);
-	        
-	        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-	        	@Override
-	        	public void onItemClick(AdapterView<?> adapter, View view, int position, long arg) {
-	        		Intent intent = new Intent(DisplayHospitalActivity.this, HospitalDetailsActivity.class);
-	        		intent.putExtra("ListItemXML", DisplayHospitalActivity.this.nodeXMLValue[position]);
-	        		startActivity(intent);
-	        	} 
-			});
-	        
 	        progressDialog.dismiss();
 	    }
 	}

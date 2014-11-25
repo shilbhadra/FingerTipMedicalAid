@@ -13,12 +13,16 @@ import org.xml.sax.InputSource;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 public class HospitalDetailsActivity extends Activity {
+	
+	String directionURL;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +54,12 @@ public class HospitalDetailsActivity extends Activity {
 		
 		NodeList nodeList = document.getElementsByTagName("hospital");
 		
+		String toLatitude = null;
+		String toLongitude = null;
+		
+		String fromLatitude = null;
+		String fromLongitude = null;
+		
 		for(int i = 0; i < nodeList.getLength(); i++) {
 			Node node = nodeList.item(i);
 			if(node.getNodeType() == Node.ELEMENT_NODE){
@@ -59,8 +69,16 @@ public class HospitalDetailsActivity extends Activity {
 				textView2.setText(getValue("address", nodeElement));
 				textView3.setText(getValue("phone", nodeElement));
 				textView4.setText(getValue("department", nodeElement));
+				
+				toLatitude = getValue("tolatitude", nodeElement);
+				toLongitude = getValue("tolongitude", nodeElement);
+				
+				fromLatitude = getValue("fromlatitude", nodeElement);
+				fromLongitude = getValue("fromlongitude", nodeElement);
 			}
 		}
+		
+		directionURL = "https://www.google.com/maps/dir/" + fromLatitude + "," + fromLongitude + "/" + toLatitude + "," + toLongitude;
 	}
 
 	@Override
@@ -86,5 +104,10 @@ public class HospitalDetailsActivity extends Activity {
 		NodeList nodeList = element.getElementsByTagName(tag).item(0).getChildNodes();  
 		Node node = (Node) nodeList.item(0);  
 		return node.getNodeValue();  
+	}
+	
+	public void openDirections(View view) {
+		Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(directionURL));
+		startActivity(intent);
 	}
 }
