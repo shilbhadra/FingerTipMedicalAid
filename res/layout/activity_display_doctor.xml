@@ -10,7 +10,7 @@
         android:id="@+id/textView1"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Your closest hospitals" 
+        android:text="Your closest doctors" 
         android:textColor="@color/list_text_color"
         android:fontFamily='Roboto'
         android:textStyle='bold'
